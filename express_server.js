@@ -33,6 +33,14 @@ app.post("/login", (req, res) => {
   // console.log('Cookies: ', req.cookies)
   res.redirect("/urls")
 })
+//GET LOGIN
+app.get("/login", (req, res) => {
+  const user_id = req.cookies.user_id;
+  const user = users[user_id];
+  const templateVars = { urls: urlDatabase, user: user };
+  res.render("login.ejs", templateVars);
+})
+
 //LOGOUT
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
