@@ -25,28 +25,41 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 })
 
+//UPDATES URL RESOURCE
+app.post("/urls/:id", (req, res) => {
+let newURL = req.body.longURL;
+let id = req.params.id;
+urlDatabase[id] = newURL;
+res.redirect('/urls');
+})
 
+//MAKE NEW LINK
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-
-app.get(`/urls/:id`, (req, res) => {
+// SHOW INFORMATION ABOUT LINK 
+app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  console.log(templateVars);
   res.render("urls_show", templateVars);
 });
 
-
+//DELETION
 app.post("/urls/:id/delete", (req, res) => {
   let id = req.params.id;
   console.log(id);
   delete urlDatabase[id];
   res.redirect("/urls");
 })
-app.get(`/u/:id`, (req, res) => {
+
+//REDIRECT TO ACTUAL LINK
+app.get("/u/:id", (req, res) => {
   let longURL = urlDatabase[req.params.id];
   res.redirect(longURL)
 })
+
+//ETC BELOW
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
