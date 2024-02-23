@@ -48,7 +48,13 @@ app.get("/register", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-// console.log(req.body,"BODY", req.param, "PARAM", req.cookies, "COOKIES");
+console.log(req.body,"BODY", req.param, "PARAM", req.cookies, "COOKIES");
+if(!req.body.email || !req.body.password){
+  return res.status(400).send("invalid username/password");
+}
+if (findUser(req.body.email)){
+  return res.status(400).send("email is already in use!");
+}
 let id = generateRandomString();
 users[id] = {
   id: id,
@@ -142,9 +148,12 @@ function generateRandomString() {
   return result;
 };
 
-const specificUser = function(user_id) {
-  for (let user in users) {
-    if (users[user] === user_id)
-    return user;
+const findUser = function(email) {
+  for (const user in users){
+    const foundUser = users[user];
+    if (foundUser.email === email) {
+      return foundUser
+    }
   }
+  return null;
 }
