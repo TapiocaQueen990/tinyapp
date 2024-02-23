@@ -14,12 +14,18 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-//LOGIN
+//LOGIN/LOGOUT
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);
   console.log('Cookies: ', req.cookies)
   res.redirect("/urls")
 })
+//LOGOUT
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
+})
+
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render("urls_index", templateVars);
