@@ -17,11 +17,14 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
-       
+      
+      <p class="navbar-nav">logged in as <%= username %></p>
+       <h6 text-align="right">
           <form class="form-inline" method="POST" action="/login">
-            <input text-align="right" class="form-control mr-sm-2" type="text"  name="username">
-            <button class="btn btn-light" type="submit">login</button>
+            <input text-align="right" type="text"  name="username">
+            <button  type="submit">login</button>
           </form>
+          </h6>
     
   </nav>
 </header>
