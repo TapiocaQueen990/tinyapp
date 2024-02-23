@@ -26,6 +26,11 @@ app.post("/logout", (req, res) => {
   res.redirect("/urls");
 })
 
+//REGISTER
+app.get("/register", (req, res) => {
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  res.render("register.ejs", templateVars)
+})
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render("urls_index", templateVars);
@@ -48,7 +53,8 @@ res.redirect('/urls');
 
 //MAKE NEW LINK
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  res.render("urls_new", templateVars);
 });
 
 // SHOW INFORMATION ABOUT LINK 
