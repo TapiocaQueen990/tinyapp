@@ -29,7 +29,7 @@ const users = {
 
 //LOGIN/LOGOUT
 app.post("/login", (req, res) => {
-  console.log(req.body,"BODY", req.param, "PARAM", req.cookies, "COOKIES");
+  
   if(!findUser(req.body.email)) {
     return res.status(403).send("Email can not be found!");
   }
@@ -44,25 +44,35 @@ app.post("/login", (req, res) => {
 })
 //GET LOGIN
 app.get("/login", (req, res) => {
+  if(!req.cookies.user_id){
   const user_id = req.cookies.user_id;
   const user = users[user_id];
   const templateVars = { urls: urlDatabase, user: user };
   res.render("login.ejs", templateVars);
+  } else {
+    res.redirect("/urls");
+  }
 })
 
+//REGISTER
+app.get("/register", (req, res) => {
+  
+  if(!req.cookies.user_id){
+  const user_id = req.cookies.user_id;
+  const user = users[user_id];
+  const templateVars = { urls: urlDatabase, user: user };
+  res.render("register.ejs", templateVars)
+  } else {
+    res.redirect("/urls");
+  }
+})
 //LOGOUT
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/login");
 })
 
-//REGISTER
-app.get("/register", (req, res) => {
-  const user_id = req.cookies.user_id;
-  const user = users[user_id];
-  const templateVars = { urls: urlDatabase, user: user };
-  res.render("register.ejs", templateVars)
-})
+
 
 app.post("/register", (req, res) => {
 
@@ -90,6 +100,9 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  if(!req.cookies.user_id){
+    res.send("please register and sign in before shortening urls!");
+  }
   let id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
  // Log the POST request body to the console
@@ -106,6 +119,9 @@ res.redirect('/urls');
 
 //MAKE NEW LINK
 app.get("/urls/new", (req, res) => {
+  if(!req.cookies.user_id){
+    res.redirect("/login");
+  }
   const user_id = req.cookies.user_id;
   const user = users[user_id];
   const templateVars = { urls: urlDatabase, user: user };
@@ -131,8 +147,14 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //REDIRECT TO ACTUAL LINK
 app.get("/u/:id", (req, res) => {
+  console.log(req.body,"BODY", req.params, "PARAM", req.cookies, "COOKIES");
+  let url = req.params.id;
+  if(urlCheck(url)){
   let longURL = urlDatabase[req.params.id];
   res.redirect(longURL)
+  } else {
+    res.send("This link does not exist");
+  }
 })
 
 //ETC BELOW
@@ -174,3 +196,12 @@ const findUser = function(email) {
   }
   return null;
 }
+
+const urlCheck = function(ourURL) {
+  for (const urls in urlDatabase){
+    if (ourURL === urls){
+      return ourURL;
+    }
+    }
+    return null;
+  }
