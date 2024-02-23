@@ -29,6 +29,15 @@ const users = {
 
 //LOGIN/LOGOUT
 app.post("/login", (req, res) => {
+  console.log(req.body,"BODY", req.param, "PARAM", req.cookies, "COOKIES");
+  if(!findUser(req.body.email)) {
+    return res.status(403).send("Email can not be found!");
+  }
+  let user = findUser(req.body.email);
+  if(user.password !== req.body.password){
+    return res.status(403).send("Incorrect password!");
+  }
+  res.cookie("user_id", user.id)
   // res.cookie("username", req.body.username);
   // console.log('Cookies: ', req.cookies)
   res.redirect("/urls")
@@ -44,7 +53,7 @@ app.get("/login", (req, res) => {
 //LOGOUT
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 })
 
 //REGISTER
@@ -56,7 +65,7 @@ app.get("/register", (req, res) => {
 })
 
 app.post("/register", (req, res) => {
-console.log(req.body,"BODY", req.param, "PARAM", req.cookies, "COOKIES");
+
 if(!req.body.email || !req.body.password){
   return res.status(400).send("invalid username/password");
 }
