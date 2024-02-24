@@ -2,7 +2,9 @@ const express = require("express");
 const app = express();
 const PORT = 8000; // default port 8080
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 
+//MIDDLEWARES
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -39,12 +41,14 @@ const users = {
 
 //LOGIN/LOGOUT
 app.post("/login", (req, res) => {
-  
+  console.log(req.body,"BODY", req.params, "PARAM", req.cookies, "COOKIES");
   if(!findUser(req.body.email)) {
     return res.status(403).send("Email can not be found!");
   }
   let user = findUser(req.body.email);
-  if(user.password !== req.body.password){
+  // if(user.password !== req.body.password){
+    let secret = bcrypt.hashSync(req.body.password, 10);
+  if(!bcrypt.compareSync(`${req.body.password}`, user.password)) {
     return res.status(403).send("Incorrect password!");
   }
   res.cookie("user_id", user.id)
@@ -96,8 +100,9 @@ let id = generateRandomString();
 users[id] = {
   id: id,
   email: req.body.email,
-  password: req.body.password
+  password: bcrypt.hashSync(req.body.password, 10)
 }
+console.log(users);
 res.cookie("user_id", id)
 res.redirect("/urls");
 })
@@ -113,7 +118,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body,"BODY", req.params, "PARAM", req.cookies, "COOKIES");
+  
   if(!req.cookies.user_id){
    return  res.send("please register and sign in before shortening urls!");
   }
