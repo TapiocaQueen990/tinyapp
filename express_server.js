@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8000; // default port 8080
 const cookieSession = require("cookie-session")
 const bcrypt = require("bcryptjs");
-
+const { generateRandomString, findUser, urlCheck, urlsForUser } = require("./helpers")
 //MIDDLEWARES
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
@@ -45,10 +45,10 @@ const users = {
 //LOGIN/LOGOUT
 app.post("/login", (req, res) => {
   console.log(req.body,"BODY", req.params, "PARAM", req.session, "COOKIES");
-  if(!findUser(req.body.email)) {
+  if(!findUser(req.body.email, users)) {
     return res.status(403).send("Email can not be found!");
   }
-  let user = findUser(req.body.email);
+  let user = findUser(req.body.email, users);
   // if(user.password !== req.body.password){
     let secret = bcrypt.hashSync(req.body.password, 10);
   if(!bcrypt.compareSync(`${req.body.password}`, user.password)) {
@@ -97,7 +97,7 @@ app.post("/register", (req, res) => {
 if(!req.body.email || !req.body.password){
   return res.status(400).send("invalid username/password");
 }
-if (findUser(req.body.email)){
+if (findUser(req.body.email, users)){
   return res.status(400).send("email is already in use!");
 }
 let id = generateRandomString();
@@ -234,41 +234,3 @@ app.listen(PORT, () => {
 });
 
 
-
-function generateRandomString() {
-  let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
-  let result="";
-  for (let i = 0; i < 6; i++){
-    result += characters[Math.floor(Math.random() * characters.length)];
-  }
-  return result;
-};
-
-const findUser = function(email) {
-  for (const user in users){
-    const foundUser = users[user];
-    if (foundUser.email === email) {
-      return foundUser
-    }
-  }
-  return null;
-}
-
-const urlCheck = function(ourID) {
-  for (const urls in urlDatabase){
-    if (ourID === urls){
-      return urls;
-    }
-    }
-    return null;
-  }
-
-  const urlsForUser = function(id) {
-    let urls = {};
-    for (let url in urlDatabase){
-      if (urlDatabase[url].userID === id) {
-        urls[url]= urlDatabase[url].longURL;
-      }
-    }
-    return urls;
-  }
