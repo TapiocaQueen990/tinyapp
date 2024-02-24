@@ -13,6 +13,9 @@
 
   <body>
     <%- include('partials/_header') %>
+    <% for(let shortUrl in userURLs){ %>
+     <% let longURL = userURLs[shortUrl] %>
+    
     <div class="card text-center">
       <div class="card-header"></div>
       <div class="card-body">
@@ -31,6 +34,9 @@
       <button type="submit" class="btn btn-primary">Submit</button>
       </form>
     </div>
+    <% } %>
+    
+   
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"

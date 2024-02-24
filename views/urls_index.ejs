@@ -31,13 +31,16 @@
         </thead>
         <tbody>
           <% for (let id in urls) { %>
+            <% let url = urls[id]; %>
+            <% if (url.userID === user.id) { %>
             <tr>
               <td><%= id %></td>
-              <td><%= urls[id] %></td>
+              <td><%= url.longURL %></td>
               <td><form method="POST" action="/urls/<%= id %>/delete"><button class="btn btn-outline-danger">Delete</button></form></td>
               <td><form method="GET" action="/urls/<%= id %>"><button class="btn btn-success">Edit</button></form></td>
               
             </tr>
+          <% } %>
           <% } %>
         </tbody>
       </table>

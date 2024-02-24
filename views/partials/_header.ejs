@@ -20,7 +20,7 @@
       
 
 
-      <% if(user) { %>
+      <% if(typeof(user) !== "undefined") { %>
       <p class="navbar-nav">logged in as <%= user.email %></p>
         <form method="POST" action="/logout">
           <button type="submit">Logout</button>

@@ -7,12 +7,22 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
-
+// WHY DO THE EDIT BUTTONS ALL LEAD TO TSN !!!!!!!!!!!!
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  }
 };
+
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
 const users = {
   userRandomID: {
     id: "userRandomID",
@@ -48,9 +58,9 @@ app.get("/login", (req, res) => {
   const user_id = req.cookies.user_id;
   const user = users[user_id];
   const templateVars = { urls: urlDatabase, user: user };
-  res.render("login.ejs", templateVars);
+  return res.render("login.ejs", templateVars);
   } else {
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
 })
 
@@ -61,9 +71,9 @@ app.get("/register", (req, res) => {
   const user_id = req.cookies.user_id;
   const user = users[user_id];
   const templateVars = { urls: urlDatabase, user: user };
-  res.render("register.ejs", templateVars)
+  return res.render("register.ejs", templateVars)
   } else {
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
 })
 //LOGOUT
@@ -93,6 +103,9 @@ res.redirect("/urls");
 })
 
 app.get("/urls", (req, res) => {
+  if(!req.cookies.user_id){
+    return res.send("please register or log in!")
+  }
   const user_id = req.cookies.user_id;
   const user = users[user_id];
   const templateVars = { urls: urlDatabase, user: user };
@@ -100,58 +113,93 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  console.log(req.body,"BODY", req.params, "PARAM", req.cookies, "COOKIES");
   if(!req.cookies.user_id){
-    res.send("please register and sign in before shortening urls!");
+   return  res.send("please register and sign in before shortening urls!");
   }
   let id = generateRandomString();
-  urlDatabase[id] = req.body.longURL;
+  urlDatabase[id] = {
+    longURL: req.body.longURL,
+    userID: req.cookies.user_id
+  };
  // Log the POST request body to the console
-  res.redirect(`/urls/${id}`);
+  return res.redirect(`/urls/${id}`);
 })
 
 //UPDATES URL RESOURCE
 app.post("/urls/:id", (req, res) => {
+  
 let newURL = req.body.longURL;
 let id = req.params.id;
-urlDatabase[id] = newURL;
+let oldURL = urlDatabase[id];
+oldURL.longURL = newURL;
 res.redirect('/urls');
 })
 
 //MAKE NEW LINK
 app.get("/urls/new", (req, res) => {
-  if(!req.cookies.user_id){
-    res.redirect("/login");
-  }
   const user_id = req.cookies.user_id;
   const user = users[user_id];
+  if(!req.cookies.user_id){
+    return res.redirect("/login");
+  }
+ 
   const templateVars = { urls: urlDatabase, user: user };
   res.render("urls_new", templateVars);
 });
 
 // SHOW INFORMATION ABOUT LINK 
 app.get("/urls/:id", (req, res) => {
+  if(!req.cookies.user_id){
+    return res.send("please log in first");
+  }
+  let urlID = req.params.id;
+  let urlKey = urlDatabase[urlID];
+  let long = urlKey.longURL
   const user_id = req.cookies.user_id;
   const user = users[user_id];
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], urls: urlDatabase, user: user };
-  console.log(templateVars);
+  let userURLs = urlsForUser(user_id);
+
+  const templateVars = { id: req.params.id, longURL: long, url: userURLs, user: user, userURLs: userURLs };
+  console.log(templateVars, "TEMPLATE VARS")
+  if (urlKey.userID === user_id){
+  
   res.render("urls_show", templateVars);
+  } else {
+    return res.status(403).send("No access for you ;)");
+}
 });
 
 //DELETION
 app.post("/urls/:id/delete", (req, res) => {
-  let id = req.params.id;
-  console.log(id);
-  delete urlDatabase[id];
+  console.log(req.body,"BODY", req.params, "PARAM", req.cookies, "COOKIES");
+  console.log(urlDatabase, "URLS");
+  if(!req.cookies.user_id){
+    return res.send("please sign in first!")
+  }
+  console.log(urlDatabase);
+  let urlID = req.params.id
+  let urlData = urlDatabase[urlID];
+  
+  if (!urlData) {
+    return res.send("This URL doesnt exist");
+  }
+  if (urlData.userID !== req.cookies.user_id) {
+    return res.send("This URL doesnt belong to you");
+  }
+  delete urlDatabase[urlID];
   res.redirect("/urls");
-})
+});
+  
 
 //REDIRECT TO ACTUAL LINK
 app.get("/u/:id", (req, res) => {
-  console.log(req.body,"BODY", req.params, "PARAM", req.cookies, "COOKIES");
-  let url = req.params.id;
-  if(urlCheck(url)){
-  let longURL = urlDatabase[req.params.id];
-  res.redirect(longURL)
+  let id = req.params.id;
+   let url = urlDatabase[id];
+  if(urlCheck(id)){
+  let long = urlDatabase[req.params.id];
+  let actualURL = long.longURL
+  res.redirect(actualURL)
   } else {
     res.send("This link does not exist");
   }
@@ -197,11 +245,21 @@ const findUser = function(email) {
   return null;
 }
 
-const urlCheck = function(ourURL) {
+const urlCheck = function(ourID) {
   for (const urls in urlDatabase){
-    if (ourURL === urls){
-      return ourURL;
+    if (ourID === urls){
+      return urls;
     }
     }
     return null;
+  }
+
+  const urlsForUser = function(id) {
+    let urls = {};
+    for (let url in urlDatabase){
+      if (urlDatabase[url].userID === id) {
+        urls[url]= urlDatabase[url].longURL;
+      }
+    }
+    return urls;
   }
