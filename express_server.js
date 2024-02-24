@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8000; // default port 8080
 const cookieSession = require("cookie-session")
 const bcrypt = require("bcryptjs");
-const { generateRandomString, findUser, urlCheck, urlsForUser } = require("./helpers")
+const { generateRandomString, getUserByEmail, urlCheck, urlsForUser } = require("./helpers")
 //MIDDLEWARES
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
@@ -45,10 +45,10 @@ const users = {
 //LOGIN/LOGOUT
 app.post("/login", (req, res) => {
   console.log(req.body,"BODY", req.params, "PARAM", req.session, "COOKIES");
-  if(!findUser(req.body.email, users)) {
+  if(!getUserByEmail(req.body.email, users)) {
     return res.status(403).send("Email can not be found!");
   }
-  let user = findUser(req.body.email, users);
+  let user = getUserByEmail(req.body.email, users);
   // if(user.password !== req.body.password){
     let secret = bcrypt.hashSync(req.body.password, 10);
   if(!bcrypt.compareSync(`${req.body.password}`, user.password)) {
@@ -97,7 +97,7 @@ app.post("/register", (req, res) => {
 if(!req.body.email || !req.body.password){
   return res.status(400).send("invalid username/password");
 }
-if (findUser(req.body.email, users)){
+if (getUserByEmail(req.body.email, users)){
   return res.status(400).send("email is already in use!");
 }
 let id = generateRandomString();
@@ -205,7 +205,7 @@ app.post("/urls/:id/delete", (req, res) => {
 app.get("/u/:id", (req, res) => {
   let id = req.params.id;
    let url = urlDatabase[id];
-  if(urlCheck(id)){
+  if(urlCheck(id, urlDatabase)){
   let long = urlDatabase[req.params.id];
   let actualURL = long.longURL
   res.redirect(actualURL)

@@ -8,7 +8,7 @@ function generateRandomString() {
   return result;
 };
 
-const findUser = function(email, database) {
+const getUserByEmail = function(email, database) {
   for (const user in database){
     const foundUser = database[user];
     if (foundUser.email === email) {
@@ -18,8 +18,8 @@ const findUser = function(email, database) {
   return null;
 }
 
-const urlCheck = function(ourID) {
-  for (const urls in urlDatabase){
+const urlCheck = function(ourID, database) {
+  for (const urls in database){
     if (ourID === urls){
       return urls;
     }
@@ -38,4 +38,4 @@ const urlCheck = function(ourID) {
   }
 
 
-  module.exports = { generateRandomString, findUser, urlCheck, urlsForUser}
+  module.exports = { generateRandomString, getUserByEmail, urlCheck, urlsForUser}
