@@ -1,13 +1,16 @@
 const express = require("express");
 const app = express();
 const PORT = 8000; // default port 8080
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session")
 const bcrypt = require("bcryptjs");
 
 //MIDDLEWARES
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: "session",
+  keys: ['oncidium']
+}));
 
 // WHY DO THE EDIT BUTTONS ALL LEAD TO TSN !!!!!!!!!!!!
 const urlDatabase = {
@@ -41,7 +44,7 @@ const users = {
 
 //LOGIN/LOGOUT
 app.post("/login", (req, res) => {
-  console.log(req.body,"BODY", req.params, "PARAM", req.cookies, "COOKIES");
+  console.log(req.body,"BODY", req.params, "PARAM", req.session, "COOKIES");
   if(!findUser(req.body.email)) {
     return res.status(403).send("Email can not be found!");
   }
@@ -51,15 +54,16 @@ app.post("/login", (req, res) => {
   if(!bcrypt.compareSync(`${req.body.password}`, user.password)) {
     return res.status(403).send("Incorrect password!");
   }
-  res.cookie("user_id", user.id)
+  res.session.user_id = user.id
+  // ("user_id", user.id)
   // res.cookie("username", req.body.username);
   // console.log('Cookies: ', req.cookies)
   res.redirect("/urls")
 })
 //GET LOGIN
 app.get("/login", (req, res) => {
-  if(!req.cookies.user_id){
-  const user_id = req.cookies.user_id;
+  if(!req.session.user_id){
+  const user_id = req.session.user_id;
   const user = users[user_id];
   const templateVars = { urls: urlDatabase, user: user };
   return res.render("login.ejs", templateVars);
@@ -71,8 +75,8 @@ app.get("/login", (req, res) => {
 //REGISTER
 app.get("/register", (req, res) => {
   
-  if(!req.cookies.user_id){
-  const user_id = req.cookies.user_id;
+  if(!req.session.user_id){
+  const user_id = req.session.user_id;
   const user = users[user_id];
   const templateVars = { urls: urlDatabase, user: user };
   return res.render("register.ejs", templateVars)
@@ -82,7 +86,7 @@ app.get("/register", (req, res) => {
 })
 //LOGOUT
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session.user_id = null;
   res.redirect("/login");
 })
 
@@ -103,15 +107,15 @@ users[id] = {
   password: bcrypt.hashSync(req.body.password, 10)
 }
 console.log(users);
-res.cookie("user_id", id)
+req.session.user_id = id;
 res.redirect("/urls");
 })
 
 app.get("/urls", (req, res) => {
-  if(!req.cookies.user_id){
+  if(!req.session.user_id){
     return res.send("please register or log in!")
   }
-  const user_id = req.cookies.user_id;
+  const user_id = req.session.user_id;
   const user = users[user_id];
   const templateVars = { urls: urlDatabase, user: user };
   res.render("urls_index", templateVars);
@@ -119,13 +123,13 @@ app.get("/urls", (req, res) => {
 
 app.post("/urls", (req, res) => {
   
-  if(!req.cookies.user_id){
+  if(!req.session.user_id){
    return  res.send("please register and sign in before shortening urls!");
   }
   let id = generateRandomString();
   urlDatabase[id] = {
     longURL: req.body.longURL,
-    userID: req.cookies.user_id
+    userID: req.session.user_id
   };
  // Log the POST request body to the console
   return res.redirect(`/urls/${id}`);
@@ -143,9 +147,9 @@ res.redirect('/urls');
 
 //MAKE NEW LINK
 app.get("/urls/new", (req, res) => {
-  const user_id = req.cookies.user_id;
+  const user_id = req.session.user_id;
   const user = users[user_id];
-  if(!req.cookies.user_id){
+  if(!req.session.user_id){
     return res.redirect("/login");
   }
  
@@ -155,13 +159,13 @@ app.get("/urls/new", (req, res) => {
 
 // SHOW INFORMATION ABOUT LINK 
 app.get("/urls/:id", (req, res) => {
-  if(!req.cookies.user_id){
+  if(!req.session.user_id){
     return res.send("please log in first");
   }
   let urlID = req.params.id;
   let urlKey = urlDatabase[urlID];
   let long = urlKey.longURL
-  const user_id = req.cookies.user_id;
+  const user_id = req.session.user_id;
   const user = users[user_id];
   let userURLs = urlsForUser(user_id);
 
@@ -177,9 +181,9 @@ app.get("/urls/:id", (req, res) => {
 
 //DELETION
 app.post("/urls/:id/delete", (req, res) => {
-  console.log(req.body,"BODY", req.params, "PARAM", req.cookies, "COOKIES");
+  console.log(req.body,"BODY", req.params, "PARAM", req.session, "COOKIES");
   console.log(urlDatabase, "URLS");
-  if(!req.cookies.user_id){
+  if(!req.session.user_id){
     return res.send("please sign in first!")
   }
   console.log(urlDatabase);
@@ -189,7 +193,7 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!urlData) {
     return res.send("This URL doesnt exist");
   }
-  if (urlData.userID !== req.cookies.user_id) {
+  if (urlData.userID !== req.session.user_id) {
     return res.send("This URL doesnt belong to you");
   }
   delete urlDatabase[urlID];
