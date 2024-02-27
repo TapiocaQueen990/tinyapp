@@ -1,3 +1,5 @@
+const { urlDatabase, users } = require("./data.js");
+
 function generateRandomString() {
   let characters =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
@@ -37,9 +39,32 @@ const urlsForUser = function (id) {
   return urls;
 };
 
+const checkAuthorization = (req, res, urlID, urlDatabase, users) => {
+  if (!req.session.user_id) {
+    return res.status(403).send("Please log in first.");
+  }
+
+  const urlData = urlDatabase[urlID];
+  if (!urlData) {
+    return res.status(403).send("This URL doesn't exist.");
+  }
+
+  const user_id = req.session.user_id;
+  const user = users[user_id];
+
+  if (urlData.userID !== user_id) {
+    return res.status(403).send("This URL doesn't belong to you.");
+  }
+
+  return user;
+};
+
+
+
 module.exports = {
   generateRandomString,
   getUserByEmail,
   urlCheck,
   urlsForUser,
+  checkAuthorization
 };

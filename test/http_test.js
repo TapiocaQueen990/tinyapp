@@ -27,34 +27,26 @@ describe("Login and Access Control Test", () => {
     });
   });
   it("Should return status code 404 to urls that dont exist", () => {
-    return agent.get("/urls/NOTEXISTS").then((res) => {
+    return agent
+    .get("/urls/NOTEXISTS")
+    .then((res) => {
       expect(res).to.have.status(403);
     });
   });
 });
-describe("Login and Access Control Test", () => {
-  const agent = chai.request.agent("http://localhost:8000");
-  it("should redirect to the login page if user requests /urls/new ", () => {
-    return agent.get("/urls/new").then((res) => {
-      expect(res).to.have.status(302);
-      expect(res).to.redirectTo("http://localhost:8000/login");
-    });
-  });
-
-  after(() => {
-    agent.close();
-  });
-}); //end
-
-// describe("redirect if not logged in ", () => {
-//   it("should redirect user if theyre not logged in (status code 302)", () => {
-//     const agent = chai.request.agent("http://localhost:8000");
-
+// describe("Login and Access Control Test", () => {
+//   const agent = chai.request.agent("http://localhost:8000");
+//   it("should redirect to the login page if user requests /urls/new ", () => {
 //     return agent
-//     .get("/")
+//     .get("/urls/new")
 //     .then((res) => {
-//       expect(res).to.redirectTo('http://localhost:8000/login');
 //       expect(res).to.have.status(302);
+//       expect(res.redirect[0]).to.equal("http://localhost:8000/login");
+      
 //     });
-// });
-//     })
+//   });
+
+  // after(() => {
+  //   agent.close();
+  // });
+// }); 

@@ -8,8 +8,9 @@ const {
   getUserByEmail,
   urlCheck,
   urlsForUser,
+  checkAuthorization
 } = require("./helpers");
-
+const { urlDatabase, users } = require("./data.js")
 //MIDDLEWARES
 
 app.set("view engine", "ejs");
@@ -23,30 +24,7 @@ app.use(
 );
 
 
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-};
 
-
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: bcrypt.hashSync("purple-monkey-dinosaur", 10),
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: bcrypt.hashSync("dishwasher-funk", 10),
-  },
-};
 
 app.get("/", (req, res) => {
   return res.redirect(302, "/login");
@@ -57,7 +35,7 @@ app.post("/login", (req, res) => {
   if (!getUserByEmail(req.body.email, users)) {
     return res.status(403).send("Email can not be found!");
   }
-  let user = getUserByEmail(req.body.email, users);
+  const user = getUserByEmail(req.body.email, users);
   if (!bcrypt.compareSync(`${req.body.password}`, user.password)) {
     return res.status(403).send("Incorrect password!");
   }
@@ -73,9 +51,9 @@ app.get("/login", (req, res) => {
     const user = users[user_id];
     const templateVars = { urls: urlDatabase, user: user };
     return res.render("login.ejs", templateVars);
-  } else {
+  }  
     return res.redirect("/urls");
-  }
+  
 });
 
 //REGISTER
@@ -85,9 +63,9 @@ app.get("/register", (req, res) => {
     const user = users[user_id];
     const templateVars = { urls: urlDatabase, user: user };
     return res.render("register.ejs", templateVars);
-  } else {
+  } 
     return res.redirect("/urls");
-  }
+  
 });
 //LOGOUT
 app.post("/logout", (req, res) => {
@@ -102,13 +80,13 @@ app.post("/register", (req, res) => {
   if (getUserByEmail(req.body.email, users)) {
     return res.status(400).send("email is already in use!");
   }
-  let id = generateRandomString();
+  const id = generateRandomString();
   users[id] = {
     id: id,
     email: req.body.email,
     password: bcrypt.hashSync(req.body.password, 10),
   };
-  console.log(users);
+  
   req.session.user_id = id;
   res.redirect("/urls");
 });
@@ -127,30 +105,31 @@ app.post("/urls", (req, res) => {
   if (!req.session.user_id) {
     return res.send("please register and sign in before shortening urls!");
   }
-  let id = generateRandomString();
-  urlDatabase[id] = {
+  const id = generateRandomString();
+   urlDatabase[id] = {
     longURL: req.body.longURL,
     userID: req.session.user_id,
   };
+  
   return res.redirect(`/urls/${id}`);
 });
 
 //UPDATES URL RESOURCE
 app.post("/urls/:id", (req, res) => {
-  console.log(req.body, "BODY", req.params, "PARAM", req.session, "COOKIES");
-  let newURL = req.body.longURL;
-  let id = req.params.id;
-  let oldURL = urlDatabase[id];
+  
+  const newURL = req.body.longURL;
+  const id = req.params.id;
+  const oldURL = urlDatabase[id];
   oldURL.longURL = newURL;
   res.redirect("/urls");
 });
 
 //MAKE NEW LINK
 app.get("/urls/new", (req, res) => {
-  console.log("User ID:", req.session.user_id);
+  
   if (!req.session.user_id) {
-    console.log("Redirecting to login...");
-    return res.redirect(302, "/login");
+    
+    return res.redirect(302, "/login")
   }
   const user_id = req.session.user_id;
   const user = users[user_id];
@@ -161,24 +140,28 @@ app.get("/urls/new", (req, res) => {
 
 // SHOW INFORMATION ABOUT LINK
 app.get("/urls/:id", (req, res) => {
-  if (!req.session.user_id) {
-    res.send("please log in first");
+  
+  if (!urlDatabase[req.params.id]) {
+    return res.status(403).send("This does not exist");
   }
-  let urlID = req.params.id;
-  if (!urlDatabase[urlID]) {
-    return res.status(403).send("Url doesnt exist");
+
+  const urlID = req.params.id;
+  const user = checkAuthorization(req, res, urlID, urlDatabase, users);
+
+  if (!user) {
+    return;
   }
-  let urlKey = urlDatabase[urlID];
+  
+  const urlKey = urlDatabase[urlID];
   const user_id = req.session.user_id;
-  const user = users[user_id];
+  
   const long = urlKey.longURL;
-  if (req.params.id !== urlKey) {
-    return res.status(404).send("This does not exist");
-  }
   if (urlKey.userID !== user_id) {
     return res.status(403).send("This does not belong to you");
   }
-  let userURLs = urlsForUser(user_id);
+  
+  
+  const userURLs = urlsForUser(user_id);
 
   const templateVars = {
     id: req.params.id,
@@ -187,49 +170,49 @@ app.get("/urls/:id", (req, res) => {
     user: user,
     userURLs: userURLs,
   };
-  console.log(templateVars, "TEMPLATE VARS");
+  
   if (urlKey.userID === user_id) {
-    res.render("urls_show", templateVars);
-  } else {
+    return res.render("urls_show", templateVars);
+  } 
     return res.status(403).send("No access for you ;)");
-  }
+  
 });
 
 //DELETION
 app.post("/urls/:id/delete", (req, res) => {
-  console.log(urlDatabase, "URLS");
-  if (!req.session.user_id) {
-    return res.send("please sign in first!");
-  }
-  console.log(urlDatabase);
-  let urlID = req.params.id;
-  let urlData = urlDatabase[urlID];
+  const urlID = req.params.id;
+  const urlData = urlDatabase[urlID];
+  
+  const user = checkAuthorization(req, res, urlID, urlDatabase, users);
 
-  if (!urlData) {
-    return res.send("This URL doesnt exist");
+  if (!user) {
+    return;
   }
-  if (urlData.userID !== req.session.user_id) {
-    return res.send("This URL doesnt belong to you");
-  }
+ 
   delete urlDatabase[urlID];
   res.redirect("/urls");
 });
 
 //REDIRECT TO ACTUAL LINK
 app.get("/u/:id", (req, res) => {
-  let id = req.params.id;
-  let url = urlDatabase[id];
+  const id = req.params.id;
+  const url = urlDatabase[id];
   if (urlCheck(id, urlDatabase)) {
-    let long = urlDatabase[req.params.id];
-    let actualURL = long.longURL;
+    const long = urlDatabase[req.params.id];
+    const actualURL = long.longURL;
     res.redirect(actualURL);
-  } else {
+  } 
     res.send("This link does not exist");
-  }
+ 
 });
 
 //ETC BELOW
-
+app.get("/", (req, res) => {
+  const user = checkAuthorization(req, res, urlID, urlDatabase, users);
+  if (!user) {
+    return res.redirect(302, "/login");
+  }
+});
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
